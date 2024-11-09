@@ -1,4 +1,3 @@
-// app/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -44,9 +43,30 @@ export default function Home() {
     if (e.key === 'ArrowRight') handleSwipe(1);
   };
 
+  const handleTouchStart = (e: TouchEvent) => {
+    const touchStartX = e.touches[0].clientX;
+
+    const handleTouchMove = (e: TouchEvent) => {
+      const touchEndX = e.touches[0].clientX;
+      const swipeDirection = touchStartX - touchEndX;
+
+      // If the swipe is significant, determine the direction
+      if (Math.abs(swipeDirection) > 50) {
+        handleSwipe(swipeDirection > 0 ? -1 : 1);
+        window.removeEventListener('touchmove', handleTouchMove);
+      }
+    };
+
+    window.addEventListener('touchmove', handleTouchMove);
+  };
+
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('touchstart', handleTouchStart);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('touchstart', handleTouchStart);
+    };
   }, []);
 
   if (recipes.length === 0) return <div>Loading...</div>;
@@ -100,7 +120,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">Cuisine:</span>
-                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+                    <span className ="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
                       {recipes[currentIndex].strArea}
                     </span>
                   </div>
