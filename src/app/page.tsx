@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/router';
 
 interface Recipe {
   idMeal: string;
@@ -16,31 +15,32 @@ export default function Home() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
-  const router = useRouter();
+  const [swipe, setSwipe] = useState(false);
 
   useEffect(() => {
     const fetchRecipes = async () => {
       try {
-        // Fetch multiple random recipes
+        // Fetch multiple recipes by first letter 'a'
         const response = await fetch(
-          'https://www.themealdb.com/api/json/v1/1/random.php'
+          'https://www.themealdb.com/api/json/v1/1/search.php?f=a'
         );
         const data = await response.json();
-        setRecipes((prev) => [...prev, ...data.meals]);
+        setRecipes(data.meals || []);
       } catch (error) {
         console.error('Error fetching recipes:', error);
       }
     };
 
-    // Fetch initial recipes
-    for (let i = 0; i < 10; i++) {
-      fetchRecipes();
-    }
+    fetchRecipes();
   }, []);
 
   const handleSwipe = (direction: number) => {
     setDirection(direction);
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
+    setSwipe(true);
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
+      setSwipe(false);
+    }, 300); // Match this duration with your exit animation duration
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -74,11 +74,6 @@ export default function Home() {
     };
   }, []);
 
-  const handleMakeNow = () => {
-    const currentRecipe = recipes[currentIndex];
-    router.push(`/recipe/${currentRecipe.idMeal}`); // Navigate to recipe details page
-  };
-
   if (recipes.length === 0) return <div>Loading...</div>;
 
   return (
@@ -93,14 +88,15 @@ export default function Home() {
               scale: 0.8
             }}
             animate={{ 
-              x: 0,
-              opacity: 1,
-              scale: 1,
+              x: swipe ? (direction > 0 ? 500 : -500) : 0,
+              opacity: swipe ? 0 : 1,
+              scale: swipe ? 0.8 : 1,
             }}
             exit={{ 
               x: direction < 0 ? 300 : -300,
               opacity: 0,
               scale: 0.8,
+              rotateY: direction < 0 ? -40 : 40
             }}
             transition={{
               type: "spring",
@@ -116,35 +112,54 @@ export default function Home() {
                 className="w-full h-64 object-cover"
               />
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className ="text-2xl font-bold mb-2">
                   {recipes[currentIndex].strMeal}
                 </h2>
                 <div className="space-y-2">
-                  <div class Name="text-gray-600">
-                    Category: {recipes[currentIndex].strCategory}
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">Category:</span>
+                    <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm">
+                      {recipes[currentIndex].strCategory}
+                    </span>
                   </div>
-                  <div className="text-gray-600">
-                    Area: {recipes[currentIndex].strArea}
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">Cuisine:</span>
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+                      {recipes[currentIndex].strArea}
+                    </span>
                   </div>
                 </div>
-                <div className="flex justify-between mt-4">
-                  <button
-                    onClick={() => handleSwipe(-1)}
-                    className="bg-red-500 text-white py-2 px-4 rounded"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={handleMakeNow}
-                    className="bg-green-500 text-white py-2 px-4 rounded"
-                  >
-                    Make Now
-                  </button>
-                </div>
+              </div>
+              <div className="p-6 pt-0 flex justify-between gap-4">
+                <button
+                  onClick={() => handleSwipe(-1)}
+                  className="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg transition-colors"
+                >
+                  Skip
+                </button>
+                <button
+                  onClick={() => handleSwipe(1)}
+                  className="flex-1 bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg transition-colors"
+                >
+                  Save
+                </button>
               </div>
             </div>
           </motion.div>
         </AnimatePresence>
+      </div>
+
+      <div className="mt-8 text-white text-center">
+        <p className="text-sm">
+          Use arrow keys or buttons to navigate
+        </p>
+        <p className="text-xs mt-2">
+          Recipe {currentIndex + 1} of {recipes.length}
+        </p>
+      </div>
+    </main>
+  );
+}
       </div>
     </main>
   );
