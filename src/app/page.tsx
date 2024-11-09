@@ -15,6 +15,7 @@ export default function Home() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+  const [swipe, setSwipe] = useState(false);
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -35,7 +36,11 @@ export default function Home() {
 
   const handleSwipe = (direction: number) => {
     setDirection(direction);
-    setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
+    setSwipe(true);
+    setTimeout(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % recipes.length);
+      setSwipe(false);
+    }, 300); // Match this duration with your exit animation duration
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -83,10 +88,9 @@ export default function Home() {
               scale: 0.8
             }}
             animate={{ 
-              x: 0,
-              opacity: 1,
-              scale: 1,
-              rotateY: 0
+              x: swipe ? (direction > 0 ? 500 : -500) : 0,
+              opacity: swipe ? 0 : 1,
+              scale: swipe ? 0.8 : 1,
             }}
             exit={{ 
               x: direction < 0 ? 300 : -300,
@@ -108,7 +112,7 @@ export default function Home() {
                 className="w-full h-64 object-cover"
               />
               <div className="p-6">
-                <h2 className="text-2xl font-bold mb-2">
+                <h2 className ="text-2xl font-bold mb-2">
                   {recipes[currentIndex].strMeal}
                 </h2>
                 <div className="space-y-2">
@@ -120,7 +124,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-600">Cuisine:</span>
-                    <span className ="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
+                    <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
                       {recipes[currentIndex].strArea}
                     </span>
                   </div>
